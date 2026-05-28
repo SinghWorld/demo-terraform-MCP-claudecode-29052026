@@ -1,6 +1,8 @@
 # Claude Code + NVIDIA NIM + Terraform MCP: A Full Stack AI Dev Setup
 <!-- # Free Claude Code Setup: Complete Technical Implementation Guide -->
 
+<img width="1389" height="863" alt="Image" src="https://github.com/user-attachments/assets/57b05e52-10b6-4b1f-aa6b-5da7d8ec9cd1" />
+
 ### I've Been Using Claude Code for Free — Here's the Exact Setup Nobody Talks About
 
 > You can run Claude Code against NVIDIA's free NIM API (powered by DeepSeek V4 Pro) through a local proxy — with full MCP Terraform server support. This guide walks through every step, every error I hit, and exactly how I fixed them.
