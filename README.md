@@ -1,7 +1,7 @@
-# Claude Code + NVIDIA NIM + Terraform MCP: A Full Stack AI Dev Setup
+# Claude Code + NVIDIA NIM API + LiteLLM + Terraform MCP: A Full Stack AI Dev Setup
 <!-- # Free Claude Code Setup: Complete Technical Implementation Guide -->
 
-<img width="1389" height="863" alt="Image" src="https://github.com/user-attachments/assets/57b05e52-10b6-4b1f-aa6b-5da7d8ec9cd1" />
+<img width="1494" height="928" alt="Image" src="https://github.com/user-attachments/assets/3c8512d5-4c3e-4711-8be6-7ab3ceea9cbe" />
 
 ### I've Been Using Claude Code for Free — Here's the Exact Setup Nobody Talks About
 
@@ -18,27 +18,55 @@ Turns out, there's a clean, legitimate way to use Claude Code against NVIDIA's N
 This is the guide I wish I had when I started.
 
 ---
+
+## About Setup
+
+Connect **Claude Code** to **NVIDIA's free API** using **LiteLLM** as a translation proxy. Run any of 150+ models — including DeepSeek V4 pro — without paying a cent.
+
+| Tool | Role |
+|------|------|
+| **Claude Code** | Anthropic's terminal-based AI coding agent |
+| **LiteLLM** | Translation proxy (Anthropic ↔ OpenAI format) |
+| **NVIDIA NIM API** | Free model hosting platform |
+| **DeepSeek V4 Pro** | 284B MoE model — coding-optimized, 1M context |
+
+---
+
+## 🖥️ Requirements
+
+| Requirement | Detail |
+|------------|--------|
+| OS | Windows / Mac / Linux |
+| Python | 3.10 or higher |
+| Node.js | v18 or higher |
+| GPU | ❌ Not required |
+| API Key | Free — build.nvidia.com |
+
+
+---
 ## **Tech stack involved:**
 - `Node.js` — Claude Code CLI runtime requirement - [Download Link](https://nodejs.org/en/download)
 - `npm` — Package manager for the install - [Download Link](https://nodejs.org/en/download)
-- `uv` — Fast Python package/environment manager (from Astral)
 - `Python 3.14` — Proxy server runtime
 - `Go` — Required to build the Terraform MCP server binary
 - `Git` — Clone the proxy repo - [Download Link](https://git-scm.com/install/windows)   
 - `Terraform` — For the MCP integration - [Download Link](https://developer.hashicorp.com/terraform/install)
-- `NVIDIA NIM API` — The free model endpoint - [Download Link](https://build.nvidia.com/)
+- `NVIDIA API` — The free model endpoint - [Download Link](https://build.nvidia.com/)
 - `DeepSeek V4 Pro` — The model doing the actual work
-- `uvicorn` — ASGI server that runs the local proxy
 - `AWS CLI` - AWS configuration - [Download Link](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)  
 
+---
+
 Let's go.
+
+---
 
 ## Step-by-Step Implementation
 
 ### Environment Setup
 
 
-#### Step 1: Verify `Node.js` Installation
+### Step 1: Verify `Node.js` Installation
 
 Open your terminal/PowerShell and confirm Node.js availability:
 
@@ -64,6 +92,7 @@ Claude Code requires Node.js.
 # Bypass execution policy only for this install
 Get-ExecutionPolicy -List
 Set-ExecutionPolicy Bypass -Scope Process -Force
+# or
 Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 # Download and install Chocolatey:
@@ -93,6 +122,9 @@ Test-Path C:\ProgramData\chocolatey\bin\choco.exe
 True
 ```
 ✅ This confirms Chocolatey is installed correctly.
+
+
+
 
 
 **Step 2 — Add Chocolatey to PATH (Permanent Fix)**
@@ -396,9 +428,91 @@ aws sso login --profile dev-sso
 
 ---
 
-#### Step 2: install UV on Windows VM
+### Step 2: install `Python3.13` on Windows VM
 
-**Step 2.1 — Open PowerShell as Administrator**
+**Step 2.1 — Install Python 3.13**
+
+Run:
+```sh
+winget install Python.Python.3.13
+```
+
+
+**Step 2.2 — Find Python Installation Path**
+
+- Run this command in PowerShell:
+
+```sh
+Get-ChildItem "$env:LOCALAPPDATA\Programs\Python" -Recurse -Filter python.exe
+```
+Example output:
+```sh
+PS C:\Users\Administrator\Desktop> Get-ChildItem "$env:LOCALAPPDATA\Programs\Python" -Recurse -Filter python.exe
+
+
+    Directory: C:\Users\Administrator\AppData\Local\Programs\Python\Python313
+
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a----         5/10/2026  11:42 AM         106208 python.exe
+
+
+PS C:\Users\Administrator\Desktop>
+
+```
+**Step 2.3 — Verify Python executable location**
+
+After install, run:
+```sh
+py -3.13 -c "import sys; print(sys.executable)"
+```
+You should get something like:
+```sh
+C:\Users\Administrator\AppData\Local\Programs\Python\Python313\python.exe
+```
+**Step 2.4 — Add Python to User PATH (Recommended)**
+
+- Copy and run this in PowerShell:
+```sh
+[Environment]::SetEnvironmentVariable(
+    "Path",
+    $env:Path + ";C:\Users\Administrator\AppData\Local\Programs\Python\Python313\;C:\Users\Administrator\AppData\Local\Programs\Python\Python313\Scripts\",
+    "User"
+)
+```
+---
+<details><summary><b>**Fix PATH manually (if still missing)**</b></summary><br>
+
+**Open environment variables:**
+```sh
+rundll32 sysdm.cpl,EditEnvironmentVariables
+```
+Then add these entries under User PATH:
+```sh
+C:\Users\Administrator\AppData\Local\Programs\Python\Python313\
+C:\Users\Administrator\AppData\Local\Programs\Python\Python313\Scripts\
+```
+</details>
+
+---
+
+**Step 2.5 — Reload PowerShell**
+
+Close PowerShell and open a new one.
+
+Then verify:
+```sh
+python --version
+py -0
+pip --version
+where.exe python
+```
+---
+
+### Step 3: install `LiteLLM` on Windows VM
+
+**Step 3.1 — Open PowerShell as Administrator**
 
 ```sh
 Press:
@@ -406,7 +520,7 @@ Press:
 Start → PowerShell → Right Click → Run as Administrator
 ```
 
-**Step 2.2 — Fix PowerShell Execution Policy, if required**
+**Step 3.2 — Fix PowerShell Execution Policy, if required**
 
 Run:
 ```sh
@@ -419,143 +533,57 @@ Verify:
 Get-ExecutionPolicy -List
 ```
 
-**Step 2.3 — Install uv**
+**Step 3.3 — Install LiteLLM**
+
 *The recommended installation method on Windows is:*
+
 ```sh
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+pip install litellm python-dotenv
+# pip install "litellm[proxy]"
+
+# pip install "litellm[proxy]" python-dotenv
+
+# pip install requests boto3
+python.exe -m pip install --upgrade pip
+
+pip install "litellm[proxy]"
+
+# Test
+python -c "import litellm; print('OK')"
+
+
+# Verify Version
+litellm --version
 ```
-**Outcome**
-```sh
-PS C:\> powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-downloading uv 0.11.16 (x86_64-pc-windows-msvc)
-installing to C:\Users\Administrator\.local\bin
-  uv.exe
-  uvx.exe
-  uvw.exe
-everything's installed!
-
-To add C:\Users\Administrator\.local\bin to your PATH, either restart your shell or run:
-
-    set Path=C:\Users\Administrator\.local\bin;%Path%   (cmd)
-    $env:Path = "C:\Users\Administrator\.local\bin;$env:Path"   (powershell)
-PS C:\>
-```
-
-**Step 2.4 — Set the path to environment**
-```sh
-$env:Path = "C:\Users\Administrator\.local\bin;$env:Path"
-```
-
-After installation, close PowerShell completely and reopen it.
-
-**Step 2.5 — Verify uv Installation**
-
-Run:
-```sh
-uv --version
-```
-You should see something like:
-```sh
-uv 0.x.x
-```
-
-**Step 2.6 — Install Python 3.14 Using uv**
-
-Run:
-```sh
-uv python install 3.14
-```
-
-This downloads and installs Python 3.14 automatically.
-
-**Step 2.7 — Verify Python Installation**
-
-List installed Python versions:
-```sh
-uv python list
-```
-
-You should see Python 3.14 in the list.
-
-**Step 2.8 — Use Python 3.14**
-
-Run Python directly:
-```sh
-uv run --python 3.14 python --version
-```
-Expected:
-```sh
-Python 3.14.x
-```
-
-**Step 2.9 — Create a Virtual Environment (Recommended)**
-
-Go to your project and create virtual environment
-```sh
-cd:\projectname
-mkdir test_demo
-cd  test_demo
-```
-
-**Create venv:**
-```sh
-uv venv --python 3.14
-```
-
-**Activate it:**
-```sh
-.venv\Scripts\activate
-```
-
-Verify:
-```sh
-python --version
-```
-
-**Step 2.10 — Install Packages**
-
-Example:
-```sh
-uv pip install requests boto3
-```
-
 ---
 
-<details><summary><b>Common Troubleshooting, If uv command is not found</b></summary><br>
+### Step 4: Install Claude Code CLI
 
-Check:
-```sh
-$env:Path
-```
-You should see:
-```sh
-C:\Users\<USERNAME>\.local\bin
-```
-If not, temporarily add it:
-```sh
-$env:Path += ";$HOME\.local\bin"
-```
-Then retry:
-```sh
-uv --version
-```
-</details>
+**Step 4.1 — Install [Claude Code](https://code.claude.com/docs/en/quickstart) using npm:**
 
----
-
-### Step 3: Install Claude Code CLI
-
-**Step 3.1 — Install [Claude Code](https://code.claude.com/docs/en/quickstart) using powershell:**
-
-**Step 3.1.1 - Open `new Windows PowerShell` as a administrator:**
+**Step 4.1.1 - Open `new Windows PowerShell` as a administrator:**
 ```bash
-irm https://claude.ai/install.ps1 | iex
+npm install -g @anthropic-ai/claude-code
 ```
 > [!NOTE]
 > *Be patient as it will take 2- 3 min for installation*
 
+**outcome **
+```sh
+PS C:\Users\Administrator\Desktop> npm install -g @anthropic-ai/claude-code
 
-<img width="1115" height="456" alt="Image" src="https://github.com/user-attachments/assets/bf836ba0-c201-48a8-b92c-4d74068426db" />
+added 2 packages in 25s
+npm notice
+npm notice New minor version of npm available! 11.12.1 -> 11.16.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.16.0
+npm notice To update run: npm install -g npm@11.16.0
+npm notice
+
+# Verify claude --version
+PS C:\Users\Administrator\Desktop> claude --version
+2.1.156 (Claude Code)
+PS C:\Users\Administrator\Desktop>
+```
 
 <details><summary><b>Windows CMD</b></summary><br>
 
@@ -570,17 +598,7 @@ curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del in
 
 ---
 
-**Step 3.2 — Add to System PATH (all users)**
-```bash
-$path = [Environment]::GetEnvironmentVariable("Path", "Machine")
-$newPath = "$path;C:\Users\Administrator\.local\bin"
-[Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
-```
-
-> [!IMPORTANT] 
-> *Close and reopen your terminal to make it effective*
-
-**Step 3.3 — Verify Claude Code Installation**
+**Step 4.2 — Verify Claude Code Installation**
 
 ```bash
 claude --version
@@ -591,7 +609,7 @@ If installed correctly, the version number will be displayed.
 
 ---
 
-### Step 4: Install Claude Code VS Code Extension**
+### Step 5: Install Claude Code VS Code Extension**
 
 1. Open VS Code
 2. Go to **Extensions**
@@ -601,51 +619,9 @@ If installed correctly, the version number will be displayed.
 
 ---
 
-### Step 5 — Download the NVIDIA NIM Proxy Folder
+### Step 6 — Create NVIDIA API Key
 
-**Step 5.1 — download NVIDIA NIM Proxy from GitHub**
-```bash
-sudo apt install git -y # install git in case if it is not installed.
-
-git clone https://github.com/Alishahryar1/free-claude-code.git nvidia-nim
-
-cd nvidia-nim
-```
-
-> 💡 The exact clone URL is available on [compilefuture.com](https://compilefuture.com/blog/how-to-use-claude-code-free-unlimited/) — the reference site for this video series.
-
-**Step 5.2 — Create Your `.env` File**
-
-```bash
-# macOS / Linux
-cp .env.example .env
-```
-
-**Step 5.3 — Configure Your API Key and Model**
-
-Open the `.env` file in VS Code or any text editor:
-
-```bash
-code .       # Opens in VS Code
-```
-
-Inside `.env`, you'll see two fields to fill in:
-
-```env
-NVIDIA_NIM_API_KEY=your_api_key_here
-NVIDIA_NIM_MODEL=nvidia/deepseek-v4-0709-pro
-
-# You will see like below
-MODEL="nvidia_nim/deepseek-ai/deepseek-v4-pro"
-```
-
-> [!NOTE]
-> **To replace your model using command:**
-> 
-> *sed -i 's|MODEL="nvidia_nim/nvidia/nemotron-3-super-120b-a12b"|MODEL="nvidia_nim/deepseek-ai/deepseek-v4-pro"|' .env*
-
-
-**Step 5.4 — To get your API key:**
+**Step 6.1 — To get your API key:**
 
 1. Go to [https://build.nvidia.com](https://build.nvidia.com)
 2. Sign up and verify your account with a phone number
@@ -653,7 +629,7 @@ MODEL="nvidia_nim/deepseek-ai/deepseek-v4-pro"
 4. Name it something like `claude-code`, set expiry to **Never Expire**
 5. Copy and paste the key into `.env`
 
-**Step 5.5 — To get the model name:**
+**Step 6.2 — To get the model name:**
 
 1. On the NVIDIA NIM site, click **Models**
 2. Pick a model (e.g. DeepSeek V4 Pro)
@@ -661,43 +637,225 @@ MODEL="nvidia_nim/deepseek-ai/deepseek-v4-pro"
 4. Copy the model string shown (e.g. `deepseek-ai/deepseek-v4-0709-pro`)
 5. In `.env`, the `nvidia/` prefix is already there — just replace the placeholder portion
 
-### Step 6: Start the NVIDIA NIM Proxy Server
 
-```bash
-# From inside the nvidia-nim directory
 
-uv run uvicorn server:app --host 0.0.0.0 --port 8082
+### Step 7 — Create Project Folder
 
-# presh allow for Python popup window
+- **Windows (cmd)**
 
-# uv run main.py
+```powershell
+mkdir Terraform-MCP-demo && cd Terraform-MCP-demo
 ```
-You'll see package downloads on the first run, then the local API server starts. **Keep this terminal window open** — Claude Code needs it running in the background.
+---
 
-> [!NOTE]
-> *You always have to keep running this API Server in the background to use Nvida Nim with Claude Code*.
+### Step 7.1 — Create `config.yaml`
 
-<img width="619" height="243" alt="Image" src="https://github.com/user-attachments/assets/26557fee-a6c9-463b-af2d-9b68f38a0db1" />
+> *we will direct open it vscode then type `code config.yaml`*
+>
+```yaml
+model_list:
+  - model_name: "*"
+    litellm_params:
+      model: nvidia_nim/deepseek-ai/deepseek-v4-flash
+      api_base: https://integrate.api.nvidia.com/v1
+      api_key: nvapi-YOUR-KEY-HERE
 
-<!-- ### Step 7 — Install Claude Code
-
-Open a **new** terminal window and run:
-
-```bash
-# npm install -g @anthropic-ai/claude-code
-curl -fsSL https://claude.ai/install.sh | bash
+litellm_settings:
+  drop_params: true
 ```
 
-Restart your terminal once after installation.
-
-<img width="658" height="297" alt="Image" src="https://github.com/user-attachments/assets/a8c27a24-e29b-46f9-ba86-b3585ab0ab3f" />
- -->
+> ⚠️ `drop_params: true` is **critical** — strips Claude-specific parameters NVIDIA rejects.
 
 ---
 
-### Step 7: Install `Go` packages
+### Step 8 — Configure Claude Code
 
-**Step 7.1 — Verify and install `Go` packages**
+Windows (PowerShell)
+
+```powershell
+mkdir $env:USERPROFILE\.claude
+code $env:USERPROFILE\.claude\settings.json
+```
+
+Paste:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://localhost:4000",
+    "ANTHROPIC_AUTH_TOKEN": "any-key-works"
+  }
+}
+```
+
+---
+
+### Step 9 — Verify the setup is working or not.
+
+- Run the python script [nvidia_api_test.py]
+- Here's what the script does, mirroring the screenshot exactly:
+  
+**Set your NVIDIA NIM API key**
+```sh
+export NVIDIA_API_KEY="nvapi-xxxxxxxxxxxxxxxxxxxx"
+```
+Get your API key from `build.nvidia.com → sign in → API Key`. Free tier gives you credits to run all 4 tests.
+
+**Run**
+```sh
+python nvidia_api_test.py
+```
+<img width="627" height="641" alt="Image" src="https://github.com/user-attachments/assets/f0de9ce7-a7f8-45ff-8e9d-643ee9336fd3" />
+
+<details><summary><b>**4-Tests covered:**</b></summary><br>
+
+**01. API Test Cases**
+
+---
+**Test 1 – List Models**
+
+**Purpose:**  
+Retrieve all available models from the API.
+
+**What it does:**
+- Sends a `GET /v1/models` request.
+- Handles paginated responses automatically.
+- Retrieves all available models.
+- Prints the total number of models returned.
+
+---
+
+**Test 2 – Search for DeepSeek Models**
+
+**Purpose:**  
+Identify all models related to DeepSeek.
+
+**What it does:**
+- Retrieves the model list from the API.
+- Filters models whose names contain `deepseek`.
+- Displays all matching DeepSeek models.
+
+---
+
+**Test 3 – Validate Specific Model**
+
+**Purpose:**  
+Verify that a specific DeepSeek model exists and inspect its metadata.
+
+**Target Model:**  
+`deepseek-ai/deepseek-v4-flash`
+
+**What it does:**
+- Searches for the specified model.
+- Retrieves the model details.
+- Prints the model owner information.
+
+---
+
+**Test 4 – Chat Completion Test**
+
+**Purpose:**  
+Verify that the model can successfully process chat completion requests.
+
+**Target Model:**  
+`deepseek-ai/deepseek-v4-flash`
+
+**What it does:**
+- Sends a live chat completion request.
+- Waits for the model response.
+- Prints the generated response.
+- Confirms end-to-end inference functionality.
+
+---
+
+**Summary**
+
+| Test | Description | Expected Outcome |
+|--------|-------------|------------------|
+| Test 1 | List all models | Total model count displayed |
+| Test 2 | Filter DeepSeek models | Matching models displayed |
+| Test 3 | Validate specific model | Owner information displayed |
+| Test 4 | Run chat completion | Model response returned successfully |
+
+</details>
+
+---
+### Step 10 — Run LiteLLM Proxy It
+
+**Terminal 1 — Start LiteLLM proxy:**
+```bash
+cd Terraform-MCP-demo
+litellm --config config.yaml --port 4000
+```
+<img width="627" height="641" alt="Image" src="https://github.com/user-attachments/assets/150b7700-dde0-426e-a0ac-a1d466f83304" />
+
+<details><summary><b>If you get error message mentioned here then we need to run command mention here</b></summary><br>
+
+<img width="1112" height="593" alt="Image" src="https://github.com/user-attachments/assets/4afac657-5c07-4718-81d6-4a6f1f8b449b" />
+
+Noticed that I was using python `3.14` and we need to use `python3.13`.
+and need to run the blow command
+```sh
+pip install "litellm[proxy]"
+```
+</details>
+
+---
+
+**Terminal 2 — Launch Claude Code:**
+```bash
+cd Terraform-MCP-demo
+
+# Type `claude`
+claude
+```
+Select the default setting and presh `enter` 
+
+<img width="934" height="708" alt="Image" src="https://github.com/user-attachments/assets/dbbf2b1c-de48-4c26-9cca-8cb28ff30a4b" />
+
+presh `enter 3 times` and you will see below
+
+<img width="1248" height="390" alt="Image" src="https://github.com/user-attachments/assets/7a27f53e-1fa9-44dd-950d-47797b692878" />
+
+in Prompt type `/status` and it will show below model and LiteLLM model.
+
+<img width="1248" height="602" alt="Image" src="https://github.com/user-attachments/assets/e0d642a8-ce2b-4e7a-abbb-cf4ce2993744" />
+
+Test prompt:
+
+```sh
+Hey, which model you are using
+```
+
+Watch Terminal 1 — you'll see requests flowing through to NVIDIA. ✅
+
+<img width="1555" height="665" alt="Image" src="https://github.com/user-attachments/assets/c917cf1d-b3a7-4fcb-8d9a-f74d6205b480" />
+
+---
+
+## How It Works
+
+```
+You type a prompt in Claude Code
+        ↓
+Claude Code sends request (Anthropic format) to localhost:4000
+        ↓
+LiteLLM strips Claude-specific params, converts to OpenAI format
+        ↓
+LiteLLM forwards to NVIDIA's API → DeepSeek V4 Flash
+        ↓
+Response flows back through LiteLLM → Claude Code
+        ↓
+You see the result in your terminal
+```
+
+> No GPU on your machine. Models run on NVIDIA's servers.
+
+---
+
+### Step 11: Install `Go` packages
+
+**Step 11.1 — Verify and install `Go` packages**
 
 Open a new PowerShell as Administrator and verify/install these:
 
@@ -707,7 +865,7 @@ go version
 ```
 If missing → download from https://go.dev/dl/ (Windows .msi installer). Install and reopen PowerShell.
 
-**Step 7.2 — Get the `terraform-mcp-server` Binary**
+**Step 11.2 — Get the `terraform-mcp-server` Binary**
 
 <!-- Option A: Download pre-built binary (fastest)
 Go to the GitHub releases page:
@@ -715,7 +873,7 @@ https://github.com/hashicorp/terraform-mcp-server/releases
 Look for a file like terraform-mcp-server_windows_amd64.zip or terraform-mcp-server_windows_amd64.exe. Download and extract it to a permanent location, for example:
 C:\tools\terraform-mcp-server\terraform-mcp-server.exe -->
 
-**Step 7.2.1 — Build from source (if no binary release exists for Windows)**
+**Step 11.2.1 — Build from source (if no binary release exists for Windows)**
 
 ```powershell
 # Clone the repo
@@ -730,7 +888,7 @@ mkdir C:\tools\terraform-mcp-server
 Move-Item terraform-mcp-server.exe C:\tools\terraform-mcp-server\
 ```
 
-**Step 7.3 — Verify the binary runs:**
+**Step 11.3 — Verify the binary runs:**
 ```powershell
 C:\tools\terraform-mcp-server\terraform-mcp-server.exe --version
 # or
@@ -739,9 +897,9 @@ C:\tools\terraform-mcp-server\terraform-mcp-server.exe --help
 
 ---
 
-### Step 8:  Configure the MCP Client**
+### Step 12:  Configure the MCP Client**
 
-**Step 8.1 —For Claude Code CLI**
+**Step 12.1 —For Claude Code CLI**
 
 Edit `~/.claude.json` (or run ``claude mcp add`):
 
@@ -762,64 +920,28 @@ claude mcp add terraform -s user -- "C:\tools\terraform-mcp-server\terraform-mcp
 **Verify MCP Server:**
 ```sh
 claude mcp list
-claude mcp get terraform # name of the MCP Server
+claude mcp get <terraform> # name of the MCP Server
 ```
-<!-- **Step 8.2 — Restart the MCP Client**
-- Claude Code CLI: No restart needed; config is read fresh each session. -->
+### Step 13: Verify the MCP Server is Loaded
 
----
-
-### Step 9:   — Launch Claude Code (Pointed at NVIDIA NIM)
-
-Navigate to your project folder, then run the startup command (it sets the `ANTHROPIC_BASE_URL` and `ANTHROPIC_API_KEY` environment variables before invoking `claude`):
-
-> [!CAUTION] 
-> ANTHROPIC_AUTH_TOKEN="freecc" ANTHROPIC_BASE_URL="http://localhost:8082" claude
+**Step 13.1 — Go to Project actual Directory**
 
 ```bash
-cd ~/your-project-folder
-
-# The exact command sets env vars for the NIM endpoint — copy from compilefuture.com
-
-# ANTHROPIC_BASE_URL=http://localhost:<port> ANTHROPIC_API_KEY=dummy claude
-
-ANTHROPIC_AUTH_TOKEN="freecc" ANTHROPIC_BASE_URL="http://localhost:8082" claude
-```
-
-Choose **Dark Mode** when prompted, then press Enter. Claude Code will start up and connect to the local NIM proxy.
-
-**Verify the connection:**
-
-```
-/status
-```
-
-You should see the localhost URL confirming the NIM endpoint is active.
-
-<img width="904" height="606" alt="Image" src="https://github.com/user-attachments/assets/0656bf34-5428-415c-9e9a-3ffd0271de8a" />
-
-
-
-### Step 10: Verify the MCP Server is Loaded
-
-**Step 10.1 — Create Project Directory**
-
-```bash
-# Create a new directory for the project
-mkdir Terraform_Demo
-cd Terraform_Demo
-
-# Initialize npm project
-# npm init -y
+# Create a new directory for the project or us existing one
+cd Terraform-MCP-demo
 ```
 
 **In Claude Code CLI**
 ```powershell
-claude mcp list
+# verify the MCP in claude
+/mcp
+# claude mcp list
 ```
 Should show terraform in the connected servers list.
 
-**Step 10.2 — Test Against Your Terraform Code**
+<img width="1555" height="665" alt="Image" src="https://github.com/user-attachments/assets/0d7c848c-bcbc-437b-8975-f1140d9d41d7" />
+
+**Step 13.2 — Test Against Your Terraform Code**
 
 > [!NOTE]
 Navigate to a folder with your Terraform files, then in Claude (Desktop or Code), try prompts like:
@@ -835,22 +957,6 @@ The MCP server runs actual Terraform commands in your working directory and feed
 
 ---
 
-## Full Setup Recap
-
-| Step | What You're Doing | Tool |
-|------|-------------------|------|
-| 1 | Install Node.js runtime | `choco` / installer |
-| 2 | Install Python env manager | `uv` |
-| 3 | Install Claude Code CLI | `curl` / `irm` |
-| 4 | Install VS Code extension | VS Code Marketplace |
-| 5 | Clone & configure NIM proxy | `git`, `.env` |
-| 6 | Start the local proxy server | `uvicorn` |
-| 7 | Build Terraform MCP binary | `go build` |
-| 8 | Register MCP with Claude Code | `~/.claude.json` |
-| 9 | Launch Claude Code → NIM | env vars + `claude` |
-| 10 | Verify Terraform MCP works | `mcp list` + test prompts |
-
----
 ## Things That Tripped Me Up (So They Don't Trip You Up)
 
 **The `&&` separator error in PowerShell** — CMD commands don't translate directly. If you're copy-pasting from docs, check which shell you're in. `PS C:\` = PowerShell. `C:\` = CMD.
@@ -864,12 +970,48 @@ The MCP server runs actual Terraform commands in your working directory and feed
 **MCP not showing in `mcp list`** — Double check the path in `~/.claude.json`. On Windows, backslashes in JSON need to be doubled (`C:\\tools\\...`).
 
 ---
+## NVIDIA Free Tier — What to Know
 
-## Why This Works the Way It Works
+| Item | Detail |
+|------|--------|
+| Cost | $0.00 — completely free |
+| Rate limit | 40 requests/minute |
+| Models | 150+ available, ~50 free endpoints |
+| Top picks | DeepSeek V4 Flash/Pro, Llama 3.3, Nemotron, Qwen |
+| Monitor | LiteLLM debug logs |
+
+---
+
+## Troubleshooting
+
+| Error | Fix |
+|-------|-----|
+| `401 Unauthorized` | Check API key in `config.yaml` |
+| `500 Internal Error` | Add `drop_params: true` to config |
+| `Connection refused` | LiteLLM not running — check Terminal 1 |
+| `Health check 408` | Normal — sensitive endpoint, API still works |
+
+**Enable debug mode for detailed logs:**
+```bash
+litellm --config config.yaml --port 4000 --debug
+```
+
+---
+
+> [!IMPORTANT]
+> 
+> - **Switch models:** Change `model:` in `config.yaml` to any NVIDIA model
+> - **Use `.env` for keys:** Use `os.environ/NVIDIA_API_KEY` in config
+> - **Monitor traffic:** Run with `--debug` flag to see every API call
+> - **Kill stale Claude config:** `Remove-Item -Recurse -Force "$env:USERPROFILE\.claude"`
+
+---
+
+<!-- ## Why This Works the Way It Works
 
 Claude Code respects two environment variables: `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN`. When you override the base URL to point at `localhost:8082`, all API traffic goes to your local proxy instead of Anthropic's servers. The proxy then reformats the request to match NVIDIA NIM's API spec and forwards it to the NIM cloud. The response comes back, gets reformatted again, and Claude Code receives it exactly as if Anthropic had responded.
 
-The `freecc` token is just a dummy value — the proxy doesn't validate it. The real authentication happens between the proxy and NVIDIA NIM using your NIM API key.
+The `freecc` token is just a dummy value — the proxy doesn't validate it. The real authentication happens between the proxy and NVIDIA NIM using your NIM API key. -->
 
 ---
 
@@ -892,7 +1034,16 @@ If this saved you time, share it. Someone else is probably closing that pricing 
 
 ---
 
+## 🔗 Links
 
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-black?style=for-the-badge&logo=github)](https://github.com/mrbalraj007)
+[![NVIDIA Build](https://img.shields.io/badge/NVIDIA-Free%20API-76b900?style=for-the-badge&logo=nvidia)](https://build.nvidia.com)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-Docs-orange?style=for-the-badge)](https://docs.claude.com/en/docs/claude-code)
+[![LiteLLM](https://img.shields.io/badge/LiteLLM-Docs-purple?style=for-the-badge)](https://docs.litellm.ai)
+
+## 📺 Watch the Full Video
+
+[![YouTube](https://img.shields.io/badge/YouTube-Watch%20Now-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=5_cZCmrlcow)
 
 
 
